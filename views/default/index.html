@@ -1,0 +1,181 @@
+{{left_sidebar_enabled,right_sidebar_enabled=False,('message' in globals())}}
+{{extend 'layout.html'}}
+
+<div id="target"></div>
+
+<script id="template" type="text/ractive">
+<a href="{{=URL('default','index')}}"><img src={{=URL('static', 'images/NextBus_logo.jpg')}} alt="NextBus Logo" style="width:250px;height:200px;"></a>
+<p>Current time: {%time%}</p>
+<div class="container board_list">
+    {% #board_blank_dict:board_id %}
+        <div class="col-lg-3 col-md-4 col-sm-4" intro-outro='fade'>
+            <div class="jumbotron text-center col-lg-12 col-md-12 col-sm-12 {% #if board_is_author %}is_mine{%/if%}">
+                {% #if board_is_author %}
+                <h2 contenteditable="true" class="empty_title" on-typing="editingTitle" data-boardid="{% board_id %}">{% board_title %}</h2>
+                {%/if%}
+                <p><a class="btn btn-primary" disabled="true" href="{{=URL('default','board')}}/{% board_id %}" role="button">More</a></p>
+            </div>
+        </div>
+    {% /board_blank_dict %}
+    {% #board_dict:id %}
+        <div class="col-lg-3 col-md-4 col-sm-4" intro-outro='fade'>
+            <div class="jumbotron text-center col-lg-12 col-md-12 col-sm-12 {% #if board_is_author %}is_mine{%/if%}">
+                {% #if board_is_author %}
+                <h2 contenteditable="true" on-typing="editingTitle" data-boardid="{% board_id %}">{% board_title %}</h2>
+                {% else %}
+                <h2>{% board_title %}</h2>
+                {%/if%}
+                <p><a class="btn btn-primary" href="{{=URL('default','board')}}/{% board_id %}" role="button">More</a></p>
+            </div>
+        </div>
+    {% /board_dict %}
+    <div class="col-lg-3 col-md-4 col-sm-4">
+        <div class="text-center col-lg-12 col-md-12 col-sm-12">
+            {% #if loading %}
+                <div id="load_spinner" style="margin-top:auto">
+                    <i class="fa fa-spinner fa-pulse fa-4x"></i>
+                </div>
+            {% /if %}
+        </div>
+    </div>
+</div>
+</script>
+<script>
+$(function() {
+
+  // Ractive object
+  var MAIN = new Ractive({
+    el: '#target',
+    template: '#template',
+    delimiters: ['{%', '%}'],
+    tripleDelimiters: ['{%%', '%%}'],
+    data: {
+      board_dict: {},
+      board_blank_dict: {},
+      edit_title:"",
+      edit_id:"",
+      loading: true,
+      time: new Date().toString().slice(16,21)
+    }
+  });
+
+  refresh();
+
+  //Allow the user to get the list of posts without the new posts created by him (because also stored locally)
+  function refresh() {
+    MAIN.set('loading', true);
+    var keys = [];
+    $.each( MAIN.get('board_blank_dict'), function( key, value ) {
+      keys.push(key);
+    });
+    // Loads the list of boards.
+    $.ajax("{{=URL('default', 'load_boards', user_signature=True)}}",
+          {
+            data: {
+              blank_boards: keys
+            },
+            method: 'POST',
+            success: function (data) {
+              MAIN.set('board_dict', data['board_dict']);
+              MAIN.set('loading', false);
+            }
+          }
+    );
+  }
+
+  function timeNow() {
+
+  }
+
+  // Called every 10s or when saving a post
+  function periodic_send() {
+    var new_title = MAIN.get('edit_title');
+    var board_dict = MAIN.get('board_dict');
+    var edit_id = MAIN.get('edit_id');
+    if (edit_id != "" && edit_id in board_dict) {
+      var old_title = board_dict[edit_id]['board_title'];
+      if (new_title != old_title && $.trim(new_title).length > 0) {
+        // No, is't not new.  Send it to the server.
+        send_board(new_title, false);
+      }
+    } else if ($.trim(new_title).length > 0) {
+      // This is a brand new board, send it to the server.
+      send_board(new_title, true);
+    }
+    refresh();
+  }
+
+  function send_board(post_title,new_board) {
+    var call_board_id = MAIN.get('edit_id');
+    $.ajax("{{=URL('default', 'add_board', user_signature=True)}}",
+            {
+              data: {
+                board_title: post_title,
+                board_id: call_board_id,
+                board_new: new_board
+              },
+              method: 'POST',
+              success: function() {
+                  refresh();
+                  MAIN.set('error',false);
+              },
+              error: function() {
+                  MAIN.set('error',true);
+              }
+            }
+    );
+    MAIN.set('edit_id','');
+    MAIN.set('edit_title','');
+  }
+
+  //Check every keyboard action on the title, and save every change when the user stop writing
+  MAIN.on('editingTitle', function(event) {
+    var t = $(event.original.target);
+    var clicked_id = t.data('boardid');
+    var text_id = t.text();
+
+    if (text_id != "") {
+        t.next().children().attr('disabled', false);
+        t.removeClass("empty_title");
+    }
+    else {
+        t.next().children().attr('disabled', true);
+        t.addClass("empty_title");
+    }
+
+    if (event.typingState == "paused" || event.typingState == "stopped") {
+        var board_dict = MAIN.get('board_dict');
+        // Sets the id of the draft being edited.
+        MAIN.set('edit_id', clicked_id);
+        MAIN.set('edit_title', text_id);
+        periodic_send();
+    }
+  });
+
+  // This code is called when the submit button is pressed. Create a new empty board in a local list
+  MAIN.on("addboard", function(e) {
+      var data = MAIN.get('board_blank_dict');
+      var obj = {"board_title": "", "board_is_author":true};
+      data[generateUUID()] = obj;
+      MAIN.set('board_blank_dict',data);
+  });
+
+  // This function generates a UUID (unique ID)
+  // http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
+  function generateUUID(){
+    var d = new Date().getTime();
+    if(window.performance && typeof window.performance.now === "function"){
+        d += performance.now(); //use high-precision timer if available
+    }
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random()*16)%16 | 0;
+        d = Math.floor(d/16);
+        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    });
+    return uuid;
+  }
+
+  setInterval(periodic_send, 10000);
+
+});
+</script>

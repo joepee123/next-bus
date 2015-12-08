@@ -1,0 +1,266 @@
+{{left_sidebar_enabled,right_sidebar_enabled=False,('message' in globals())}}
+{{extend 'layout.html'}}
+
+<div id="target"></div>
+
+<script id="template" type="text/ractive">
+<a class="btn btn-primary" href="#" on-click="addpost">
+  <i class="fa fa-plus-circle fa-lg"></i> New Post</a>
+{% #if deleting %}
+<a class="btn btn-danger" href="#" on-click="delete_selected">
+  <i class="fa fa-trash fa-lg"></i> Delete</a>
+{% /if %}
+<a class="btn btn-primary" href="{{=URL('default','index')}}"><i class="fa fa-chevron-circle-left"></i>Return to Board page</a>
+<h2>Posts:</h2>
+<div class="container post_list">
+    {% #post_blank_dict:post_id %}
+        <div class="col-lg-3 col-md-4 col-sm-4" intro-outro='fade'>
+            <div class="jumbotron text-center col-lg-12 col-md-12 col-sm-12 {% #if post_is_author %}is_mine{%/if%}" style="padding: 10px">
+                {% #if post_is_author %}
+                <a data-postid="{% post_id %}" class="btn btn-sm btn-default col-lg-offset-7 col-md-offset-5 col-sm-offset-7 col-xs-offset-8" href="#" on-click="deletepost">
+                    <i data-postid="{% post_id %}" class="fa fa-times"></i></a>
+                <h2 on-typing="editing" class="empty_title" contenteditable="true" data-postid="{% post_id %}" id="title">{% post_title %}</h2>
+                <p on-typing="editing" class="empty_title" contenteditable="true" data-postid="{% post_id %}" id="content">{% post_content %}</p>
+                {% else %}
+                <h2>{% post_title %}</h2>
+                <p>{% post_content %}</p>
+                {%/if%}
+            </div>
+        </div>
+    {% /post_blank_dict %}
+
+    {% #post_dict:id %}
+        <div class="col-lg-3 col-md-4 col-sm-4" intro-outro='fade'>
+            <div class="jumbotron text-center col-lg-12 col-md-12 col-sm-12 {% #if post_is_author %}is_mine{%/if%}" style="padding: 10px">
+                {% #if post_is_author %}
+                <a data-postid="{% post_id %}" class="btn btn-sm btn-default col-lg-offset-7 col-md-offset-5 col-sm-offset-7 col-xs-offset-8" href="#" on-click="deletepost">
+                    <i data-postid="{% post_id %}" class="fa fa-times"></i></a>
+                <h2 on-typing="editing" contenteditable="true" data-postid="{% post_id %}" id="title">{% post_title %}</h2>
+                <p on-typing="editing" contenteditable="true" data-postid="{% post_id %}" id="content">{% post_content %}</p>
+                {% else %}
+                <h2>{% post_title %}</h2>
+                <p>{% post_content %}</p>
+                {%/if%}
+            </div>
+        </div>
+    {% /post_dict %}
+    <div class="col-lg-3 col-md-4 col-sm-4">
+        <div class="text-center col-lg-12 col-md-12 col-sm-12">
+            {% #if loading %}
+                <div id="load_spinner" style="margin-top:auto">
+                    <i class="fa fa-spinner fa-pulse fa-4x"></i>
+                </div>
+            {% /if %}
+        </div>
+    </div>
+</div>
+</script>
+<script>
+$(function() {
+  //The delete_list is not handled by ractive because I had no time to implement this, everything else is ractive.
+  var delete_list = [];
+  // Ractive object
+  var MAIN = new Ractive({
+    el: '#target',
+    template: '#template',
+    delimiters: ['{%', '%}'],
+    tripleDelimiters: ['{%%', '%%}'],
+    data: {
+      post_dict: {},
+      post_blank_dict: {},
+      edit_title:"",
+      edit_content:"",
+      edit_id:"",
+      deleting: false,
+      loading: true
+    }
+  });
+
+  refresh();
+
+  //Same than the index refresh function
+  function refresh() {
+    MAIN.set('loading', true);
+    var keys = [];
+    $.each( MAIN.get('post_blank_dict'), function( key, value ) {
+      keys.push(key);
+    });
+    $.ajax("{{=URL('default', 'load_posts', user_signature=True)}}",
+          {
+            data: {
+              blank_posts: keys,
+              board_id: '{{=board_id}}'
+            },
+            method: 'POST',
+            success: function (data) {
+              MAIN.set('post_dict', data['post_dict']);
+              MAIN.set('loading', false);
+            }
+          }
+    );
+  }
+
+  // Same than index periodic_send function
+  function periodic_send() {
+    var new_title = MAIN.get('edit_title');
+    var new_content = MAIN.get('edit_content');
+    var post_dict = MAIN.get('post_dict');
+    var edit_id = MAIN.get('edit_id');
+    if (edit_id != "" && edit_id in post_dict) {
+      var old_title = post_dict[edit_id]['post_title'];
+      var old_content = post_dict[edit_id]['post_content'];
+      if (new_title != old_title && $.trim(new_title).length > 0 && new_content != old_content && $.trim(new_content).length > 0) {
+        send_post(new_title, new_content, false);
+      }
+    } else if ($.trim(new_title).length > 0) {
+      send_post(new_title, new_content, true);
+    }
+    refresh();
+  }
+
+  function send_post(post_title, post_content, new_post) {
+    var call_post_id = MAIN.get('edit_id');
+    $.ajax("{{=URL('default', 'add_post', user_signature=True)}}",
+            {
+              data: {
+                post_title: post_title,
+                post_content: post_content,
+                post_parent: '{{=board_id}}',
+                post_id: call_post_id,
+                post_new: new_post
+              },
+              method: 'POST',
+              success: function() {
+                  refresh();
+                  MAIN.set('error',false);
+              },
+              error: function() {
+                  MAIN.set('error',true);
+              }
+            }
+    );
+    MAIN.set('edit_id','');
+    MAIN.set('edit_title','');
+    MAIN.set('edit_content','');
+  }
+  //Detect when the user is typing, and save changes everytime he take a break.
+  MAIN.on('editing', function(event) {
+    var t = $(event.original.target);
+    var clicked_id = t.data('postid');
+    var title,content;
+    if (t.attr('id') == 'title') {
+        title = t.text();
+        content = t.next('#content').text();
+    }
+    else {
+       content = t.text();
+       title = t.prev('#title').text();
+    }
+
+    if (t.text() != "") {
+        t.removeClass("empty_title");
+    }
+    else {
+        t.addClass("empty_title");
+    }
+
+    if (event.typingState == "paused" || event.typingState == "stopped") {
+        // Sets the id of the draft being edited.
+        MAIN.set('edit_id', clicked_id);
+        MAIN.set('edit_title', title);
+        MAIN.set('edit_content', content);
+        periodic_send();
+    }
+  });
+
+  // This code is called when the submit button is pressed.
+  MAIN.on("addpost", function(e) {
+      var data = MAIN.get('post_blank_dict');
+      var obj = {"post_title": "", "post_content": "", "post_is_author":true};
+      data[generateUUID()] = obj;
+      MAIN.set('post_blank_dict',data);
+  });
+
+  // This code is called when the delete button is pressed.
+  MAIN.on("delete_selected", function(e) {
+    $.ajax("{{=URL('default', 'delete_post', user_signature=True)}}",
+            {
+              data: {
+                  delete_dict:delete_list
+              },
+              method: 'POST',
+              success: function() {
+                  refresh();
+                  MAIN.set('error',false);
+              },
+              error: function() {
+                  MAIN.set('error',true);
+              }
+            }
+    );
+
+    var blank_data = MAIN.get('post_blank_dict');
+    $.each(delete_list, function(index, value){
+        //Thanks Jim Puls on stackoverflow
+        if (typeof blank_data[value] !== 'undefined') {
+            delete blank_data[value];
+        }
+    });
+    MAIN.set('post_blank_dict',blank_data);
+    delete_list = [];
+    $('.jumbotron').each(function() {
+        $(this).removeClass('selected_delete')
+    });
+    MAIN.set('deleting',false);
+  });
+
+  // This code is called when a cross button is pressed.
+  MAIN.on("deletepost", function(e) {
+      var t = $(e.original.target);
+      var b;
+      if (t.is('I')) {
+          b = t.parent();
+      }
+      else {
+          b = t;
+      }
+      var clicked_id = b.data('postid');
+      if (jQuery.inArray( clicked_id, delete_list)>=0) {
+          //Already selected => Deselect
+          var index = delete_list.indexOf(clicked_id);
+          if (index > -1) {
+              delete_list.splice(index, 1);
+          }
+          b.parent().toggleClass('selected_delete');
+      }
+      else {
+          delete_list.push(clicked_id);
+          b.parent().toggleClass('selected_delete');
+      }
+      if (delete_list.length>0) {
+          MAIN.set('deleting',true);
+      }
+      else {
+          MAIN.set('deleting',false);
+      }
+  });
+
+  // This function generates a UUID (unique ID)
+  // http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
+  function generateUUID(){
+    var d = new Date().getTime();
+    if(window.performance && typeof window.performance.now === "function"){
+        d += performance.now(); //use high-precision timer if available
+    }
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random()*16)%16 | 0;
+        d = Math.floor(d/16);
+        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    });
+    return uuid;
+  }
+
+  setInterval(periodic_send, 10000);
+
+});
+</script>

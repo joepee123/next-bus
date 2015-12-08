@@ -1,0 +1,30 @@
+/* line 1, ../sass/_main.scss */
+.colorful {
+  color: #bb8833;
+}
+
+/* line 5, ../sass/_main.scss */
+.empty_title {
+  outline: 2px solid red;
+}
+
+/* line 9, ../sass/_main.scss */
+.jumbotron.is_mine {
+  border-bottom: 2px solid #00BC8C;
+}
+
+/* line 13, ../sass/_main.scss */
+.jumbotron:not(.is_mine) {
+  border-bottom: 2px solid #EEE;
+}
+
+/* line 17, ../sass/_main.scss */
+.jumbotron > p {
+  font-size: 14px;
+}
+
+/* line 21, ../sass/_main.scss */
+.selected_delete {
+  border-top: 2px solid #e74c3c;
+  margin-top: -2px;
+}
