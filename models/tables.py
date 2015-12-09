@@ -22,11 +22,6 @@ db.define_table('schedules',
              Field('times', 'list:string'),
             )
 
-db.define_table('post',
-             Field('post_author', db.auth_user, default=auth.user_id),
-             Field('post_parent'),
-             Field('post_title'),
-             Field('post_content', 'text'),
-             Field('created_on', 'datetime', default=datetime.utcnow()),
-             Field('post_id')
-            )
+db.define_table('stops',
+            Field('stop_number', 'integer'),
+            Field('name'))

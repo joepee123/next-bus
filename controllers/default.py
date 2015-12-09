@@ -11,19 +11,15 @@ import time
 def index():
     form = SQLFORM.factory(
         Field('name'),
-        Field('route'),
-        Field('times'))
+        Field('stopNumber'))
     if form.process().accepted:
-        response.flash = 'loaded schedule'
+        response.flash = 'loaded stop information! Hi Ben -_- databases are boring'
         session.name = form.vars.name
-        session.route = form.vars.route
-        session.times = form.vars.times
-        loadSchedule(session.name, session.route, session.times)
-        #db.schedules.insert(name = session.name, route = session.route)
+        session.stopNumber = form.vars.stopNumber
+        db.stops.insert(name = session.name, stop_number = session.stopNumber)
     elif form.errors:
         response.flash = 'form has errors'
-    schedule=db(db.schedules).select(db.schedules.ALL).last()
-    return dict(form=form, schedule=schedule)
+    return dict(form=form)
 
 def find_time():
     # finds the closest time in the table of bus times to the current time

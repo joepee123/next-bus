@@ -84,3 +84,10 @@ success!
 success!
 success!
 success!
+timestamp: 2015-12-09T13:41:45.976040
+CREATE TABLE stops(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    stop_number INTEGER,
+    name CHAR(512)
+);
+success!
