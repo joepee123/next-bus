@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # this file is released under public domain and you can use without limitations
 
+
 from gluon import utils as gluon_utils
 import datetime
 import json
@@ -8,7 +9,21 @@ import time
 
 @auth.requires_login()
 def index():
-    return dict()
+    form = SQLFORM.factory(
+        Field('name'),
+        Field('route'),
+        Field('times'))
+    if form.process().accepted:
+        response.flash = 'loaded schedule'
+        session.name = form.vars.name
+        session.route = form.vars.route
+        session.times = form.vars.times
+        loadSchedule(session.name, session.route, session.times)
+        #db.schedules.insert(name = session.name, route = session.route)
+    elif form.errors:
+        response.flash = 'form has errors'
+    schedule=db(db.schedules).select(db.schedules.ALL).last()
+    return dict(form=form, schedule=schedule)
 
 def find_time():
     # finds the closest time in the table of bus times to the current time
@@ -26,13 +41,13 @@ def find_time():
         #PROBLEM: If we are looking for bus just before midnight, this search might not work - crap.
         if difference<0:
             continue
-        else if difference<minimumDiff:
+        elif difference<minimumDiff:
             minimumDiff = difference
             closestTime = time
     #if no closest time found, make closest time the first time in the list
     if minimumDiff==10000:
         closestTime=times[0]
-return dict(closestTime=closestTime)
+    return dict(closestTime=closestTime)
 
 @auth.requires_login()
 def board():
@@ -155,18 +170,23 @@ def call():
 def timeToInt(time):
     return int(time[0:2])*60 + int(time[3:5])
 
+
+
 def loadSchedule(stopName, routeDirection, times):
     timesList = []
+    times = times.split(",")
     for time in times:
-        minutes = str(time%60)
-        hours = str((time-int(minutes)/60)
-        if int(hours) <10:
+        minutes = str(int(time)%60)
+        hours = str(((int(time)-int(minutes))/60))
+        if int(hours)==0:
+            hours = "00"
+        elif int(hours)<10:
             hours = "0" + hours
-        if int(minutes) <10:
+        if int(minutes)==0:
+            minutes = "00"
+        elif int(minutes)<10:
             minutes = "0" + minutes
         timeStr = hours + ":" + minutes
-        timesList.append(timesStr)
-    db.schedules.insert(stop_name = stopName, route = routeDirection, times = timesList)
+        timesList.append(timeStr)
+    db.schedules.insert(name = stopName, route = routeDirection, times = timesList)
     return dict()
-
-

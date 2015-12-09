@@ -73,3 +73,14 @@ CREATE TABLE post(
     post_id CHAR(512)
 );
 success!
+timestamp: 2015-12-08T15:41:17.946963
+CREATE TABLE schedules(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name CHAR(512),
+    route CHAR(512),
+    times TEXT
+);
+success!
+success!
+success!
+success!

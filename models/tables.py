@@ -16,11 +16,10 @@
 #########################################################################
 from datetime import datetime
 
-db.define_table('board',
-             Field('board_author', db.auth_user, default=auth.user_id),
-             Field('board_title'),
-             Field('board_id'),
-             Field('created_on', 'datetime', default=datetime.utcnow()),
+db.define_table('schedules',
+             Field('name'),
+             Field('route'),
+             Field('times', 'list:string'),
             )
 
 db.define_table('post',
