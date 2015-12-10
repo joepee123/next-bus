@@ -11,6 +11,9 @@ import time
 def index():
     return dict()
 
+def about():
+    return dict()
+
 def addSchedule():
     form = SQLFORM.factory(
         Field('name'),
