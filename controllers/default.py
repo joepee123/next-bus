@@ -11,6 +11,21 @@ import time
 def index():
     return dict()
 
+def addSchedule():
+    form = SQLFORM.factory(
+        Field('name'),
+        Field('route'),
+        Field('times'))
+    if form.process().accepted:
+        response.flash = 'form accepted'
+        session.name = form.vars.name
+        session.route = form.vars.route
+        session.times = form.vars.times
+        loadSchedule(session.name, session.route, session.times)
+    elif form.errors:
+        response.flash = 'form has errors'
+    return dict(form=form)
+
 def getDirection():
     startID = int(request.vars['startID'])
     endID = int(request.vars['stopID'])

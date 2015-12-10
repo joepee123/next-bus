@@ -6,9 +6,11 @@
 <script id="template" type="text/ractive">
 <a href="{{=URL('default','index')}}"><img src={{=URL('static', 'images/NextBus_logo.jpg')}} alt="NextBus Logo" style="width:250px;height:200px;"></a>
 
+<a href="{{=URL('default','addSchedule')}}">ADD SCHEDULE</a>
+
 <h4>From:</h4>
 <select value='{%fromStop%}'>
-    <option selected disabled>Origin</option>
+    <option value = "">Origin</option>
     {%#stops%}
         <option value='{%id%}'>{%name%}</option>
     {%/stops%}
@@ -17,7 +19,7 @@
 
 <h4>To:</h4>
 <select value='{%toStop%}'>
-    <option selected disabled>Destination</option>
+    <option value = "">Destination</option>
     {%#stops%}
         <option value='{%id%}'>{%name%}</option>
     {%/stops%}
@@ -29,8 +31,11 @@
 {%/if%}
 <br>
 <br>
-<a class="btn btn-primary" href="#" on-click="findTimes">
-  <i class="fa fa-plus-circle fa-lg"></i>Submit</a>
+{%#if fromStop!="" && toStop!=""%}<a class="btn btn-primary" href="#" on-click="findTimes">
+  <i class="fa fa-plus-circle fa-lg"></i>Find Times</a>{%/if%}
+
+<a class="btn btn-primary" href="#" on-click="switchStops">
+  <i class="fa fa-plus-circle fa-lg"></i>Switch</a>
 </script>
 
 <script>
@@ -63,10 +68,17 @@ $(function() {
         ]
     }
   });
+  MAIN.on("switchStops", function(e) {
+    var startID = parseInt(MAIN.get('fromStop'));
+    var stopID = parseInt(MAIN.get('toStop'));
+    MAIN.set('fromStop', stopID);
+    MAIN.set('toStop', startID);
+  });
 
   MAIN.on("findTimes", function(e) {
     var startID = parseInt(MAIN.get('fromStop'));
     var stopID = parseInt(MAIN.get('toStop'));
+
     $.ajax("{{=URL('default', 'getDirection', user_signature=True)}}",
           {
             dataType: "json",
