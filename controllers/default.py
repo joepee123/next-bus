@@ -9,29 +9,42 @@ import time
 
 @auth.requires_login()
 def index():
-    form = SQLFORM.factory(
-        Field('name'),
-        Field('stopNumber'))
-    if form.process().accepted:
-        response.flash = 'loaded stop information! Hi Ben -_- databases are boring'
-        session.name = form.vars.name
-        session.stopNumber = form.vars.stopNumber
-        db.stops.insert(name = session.name, stop_number = session.stopNumber)
-    elif form.errors:
-        response.flash = 'form has errors'
-    return dict(form=form)
+    return dict()
 
-def find_time():
+def getDirection():
+    logging.warning('start ID = %s end ID = %s', request.vars['startID'], request.vars['stopID'])
+    startID = int(request.vars['startID'])
+    endID = int(request.vars['stopID'])
+    if 1<=startID<=6:
+        logging.warning("startID is between 1 and 6")
+        if endID-startID<0 or endID-startID>=6:
+            logging.warning("direction should be anti")
+            return response.json(dict(direction="ANTI"))
+        else:
+            return response.json(dict(direction="CLOCK"))
+    else:
+        if endID-startID>0 or startID-endID>=6:
+            return response.json(dict(direction="CLOCK"))
+        else:
+            return response.json(dict(direction="ANTI"))
+
+def findTimes():
     # finds the closest time in the table of bus times to the current time
     # convert current time to an integer by making time = hour*60 + minutes
     # go through each time in the table and convert it to an integer in the same way
     # find time with smallest positive difference
-    now = str(datetime.datetime.now())[11:16]
+    startID = request.vars['startID']
+    direction = request.vars['direction']
+    now = "11:20"
+    #str(datetime.datetime.now())[11:16]
     nowInt = timeToInt(now)
     minimumDiff = 10000
+    name=db(db.stops.stop_number==startID).select(db.stops.ALL).first().name
     #pretend times gives back the times of the specific schedule we are looking for
-    times=db(db.bus_schedule).select(db.bus_schedule.ALL).first().passing_times
-    for time in times:
+    times=db((db.schedules.name==name) & (db.schedules.route==direction)).select(db.schedules.ALL).first().times
+    end = len(times)-1
+    for idx, time in enumerate(times):
+        logging.warning(time)
         difference = timeToInt(time) - nowInt
         #if the time we look at is before the time now, go to next time
         #PROBLEM: If we are looking for bus just before midnight, this search might not work - crap.
@@ -40,10 +53,18 @@ def find_time():
         elif difference<minimumDiff:
             minimumDiff = difference
             closestTime = time
+            index = idx
     #if no closest time found, make closest time the first time in the list
     if minimumDiff==10000:
         closestTime=times[0]
-    return dict(closestTime=closestTime)
+        index = 0
+    if index==end:
+        closestTimes = [times[index], times[0], times[1]]
+    elif index == end-1:
+        closestTimes = [times[index], times[index+1], times[0]]
+    else:
+        closestTimes = [times[index], times[index+1], times[index+2]]
+    return response.json(dict(closestTimes=closestTimes))
 
 @auth.requires_login()
 def board():
