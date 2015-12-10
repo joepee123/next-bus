@@ -12,13 +12,10 @@ def index():
     return dict()
 
 def getDirection():
-    logging.warning('start ID = %s end ID = %s', request.vars['startID'], request.vars['stopID'])
     startID = int(request.vars['startID'])
     endID = int(request.vars['stopID'])
     if 1<=startID<=6:
-        logging.warning("startID is between 1 and 6")
         if endID-startID<0 or endID-startID>=6:
-            logging.warning("direction should be anti")
             return response.json(dict(direction="ANTI"))
         else:
             return response.json(dict(direction="CLOCK"))
@@ -35,8 +32,7 @@ def findTimes():
     # find time with smallest positive difference
     startID = request.vars['startID']
     direction = request.vars['direction']
-    now = "11:20"
-    #str(datetime.datetime.now())[11:16]
+    now = str(datetime.datetime.now())[11:16]
     nowInt = timeToInt(now)
     minimumDiff = 10000
     name=db(db.stops.stop_number==startID).select(db.stops.ALL).first().name
@@ -44,7 +40,6 @@ def findTimes():
     times=db((db.schedules.name==name) & (db.schedules.route==direction)).select(db.schedules.ALL).first().times
     end = len(times)-1
     for idx, time in enumerate(times):
-        logging.warning(time)
         difference = timeToInt(time) - nowInt
         #if the time we look at is before the time now, go to next time
         #PROBLEM: If we are looking for bus just before midnight, this search might not work - crap.

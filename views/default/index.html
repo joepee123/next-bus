@@ -22,8 +22,13 @@
         <option value='{%id%}'>{%name%}</option>
     {%/stops%}
 </select>
-{%#if toStop!=None%}POO{%/if%}
-<h4></h4>
+{%#if closestTimes!=""%}
+<h4>#1: {%closestTimes[0]%}</h4>
+<h4>#2: {%closestTimes[1]%}</h4>
+<h4>#3: {%closestTimes[2]%}</h4>
+{%/if%}
+<br>
+<br>
 <a class="btn btn-primary" href="#" on-click="findTimes">
   <i class="fa fa-plus-circle fa-lg"></i>Submit</a>
 </script>
@@ -42,6 +47,7 @@ $(function() {
         toStop: "",
         direction: "",
         closestTime: "",
+        closestTimes: "",
         stops: [
             { id: '1', name: 'Barn Theatre' },
             { id: '2', name: 'High and Western' },
@@ -83,10 +89,8 @@ $(function() {
                 method: 'POST',
                 success: function (data)
                 {
-                  alert("success")
                   MAIN.set('closestTimes', data['closestTimes']);
                   var closestTimes = MAIN.get('closestTimes');
-                  alert(closestTimes)
 
                 }
               }
