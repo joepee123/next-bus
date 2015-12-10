@@ -6,11 +6,44 @@
 @import "compass/utilities";
 //note that compass is a sass extension.
 //install using "gem install compass"
-//use by runninng "compass watch" from the static folder
+//use by running "compass watch" from the static folder
 
 @import "constants";
 @import "main";
 
 .container .jumbotron, .container-fluid .jumbotron {
     border-radius: 0px;
+}
+
+.head{
+  text-align : center;
+}
+
+#stopfrom{
+  text-align : right;
+}
+
+#stopto{
+  text-align : left;
+}
+
+#switchButton{
+  text-align : center;
+}
+
+#findTimes{
+  text-align : center;
+}
+
+#nextTimes{
+  text-align : center;
+}
+
+#nextTimes.h4{
+  font-size: large;
+}
+
+#footer{
+  text-align: center;
+
 }

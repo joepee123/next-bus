@@ -28,3 +28,48 @@
   border-top: 2px solid #e74c3c;
   margin-top: -2px;
 }
+
+/* line 14, ../sass/myapp.scss */
+.container .jumbotron, .container-fluid .jumbotron {
+  border-radius: 0px;
+}
+
+/* line 18, ../sass/myapp.scss */
+.head {
+  text-align: center;
+}
+
+/* line 22, ../sass/myapp.scss */
+#stopfrom {
+  text-align: right;
+}
+
+/* line 26, ../sass/myapp.scss */
+#stopto {
+  text-align: left;
+}
+
+/* line 30, ../sass/myapp.scss */
+#switchButton {
+  text-align: center;
+}
+
+/* line 34, ../sass/myapp.scss */
+#findTimes {
+  text-align: center;
+}
+
+/* line 38, ../sass/myapp.scss */
+#nextTimes {
+  text-align: center;
+}
+
+/* line 42, ../sass/myapp.scss */
+#nextTimes.h4 {
+  font-size: large;
+}
+
+/* line 46, ../sass/myapp.scss */
+#footer {
+  text-align: center;
+}

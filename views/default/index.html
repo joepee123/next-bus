@@ -4,38 +4,54 @@
 <div id="target"></div>
 
 <script id="template" type="text/ractive">
-<a href="{{=URL('default','index')}}"><img src={{=URL('static', 'images/NextBus_logo.jpg')}} alt="NextBus Logo" style="width:250px;height:200px;"></a>
+<div class="head">
+    <a href="{{=URL('default','index')}}"><img src={{=URL('static', 'images/NextBus_logo.jpg')}} alt="NextBus Logo" style="width:250px;height:200px;"></a>
+</div>
 
-<a href="{{=URL('default','addSchedule')}}">ADD SCHEDULE</a>
+<div class="col-md-12">
+    <div class="col-md-4" id="stopfrom">
+        <h4>From:</h4>
+        <select value='{%fromStop%}'>
+        <option value = "">Origin</option>
+            {%#stops%}
+                <option value='{%id%}'>{%name%}</option>
+            {%/stops%}
+        </select>
+        <br>
+    </div>
+    <div class="col-md-4" id="switchButton">
+        <a class="btn btn-primary" href="#" on-click="switchStops">
+        <i class="fa fa-refresh fa-lg"></i> Switch</a>
+    </div>
+    <div class="col-md-4" id="stopto">
+        <h4>To:</h4>
+        <select value='{%toStop%}'>
+        <option value = "">Destination</option>
+            {%#stops%}
+                <option value='{%id%}'>{%name%}</option>
+            {%/stops%}
+        </select>
+    </div>
+</div>
+<div class="col-md-12" id="findTimes">
+    {%#if fromStop!="" && toStop!=""%}
+        <a class="btn btn-primary" href="#" on-click="findTimes">
+        <i class="fa fa-plus-circle fa-lg"></i> Find Times</a>
+    {%/if%}
+</div>
 
-<h4>From:</h4>
-<select value='{%fromStop%}'>
-    <option value = "">Origin</option>
-    {%#stops%}
-        <option value='{%id%}'>{%name%}</option>
-    {%/stops%}
-</select>
-<br>
+<div class="col-md-12" id="nextTimes">
+    {%#if closestTimes!=""%}
+    <h1>{%closestTimes[0]%}</h1>
+    <h1>{%closestTimes[1]%}</h1>
+    <h1>{%closestTimes[2]%}</h1>
+    {%/if%}
+</div>
 
-<h4>To:</h4>
-<select value='{%toStop%}'>
-    <option value = "">Destination</option>
-    {%#stops%}
-        <option value='{%id%}'>{%name%}</option>
-    {%/stops%}
-</select>
-{%#if closestTimes!=""%}
-<h4>#1: {%closestTimes[0]%}</h4>
-<h4>#2: {%closestTimes[1]%}</h4>
-<h4>#3: {%closestTimes[2]%}</h4>
-{%/if%}
-<br>
-<br>
-{%#if fromStop!="" && toStop!=""%}<a class="btn btn-primary" href="#" on-click="findTimes">
-  <i class="fa fa-plus-circle fa-lg"></i>Find Times</a>{%/if%}
+<div class="col-md-12" id="footer">
+    <a href="{{=URL('default','about')}}">About us</a>
+</div>
 
-<a class="btn btn-primary" href="#" on-click="switchStops">
-  <i class="fa fa-plus-circle fa-lg"></i>Switch</a>
 </script>
 
 <script>
@@ -114,7 +130,6 @@ $(function() {
 
 
   });
-//{%#if fromStop!=None%}{%/if%}
 });
 </script>
 
